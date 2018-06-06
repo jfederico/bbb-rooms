@@ -1,0 +1,11 @@
+# Database configuration
+# DB_ADAPTER=<postgresql|sqlite3>
+# DB_HOST=
+# DB_USERNAME=
+# DB_PASSWORD=
+# DB_ENCODING=5
+# DB_POOL=5
+# DB_TIMEOUT=5000
+# DB_CONNECT_TIMEOUT=10
+# DB_DATABASE=bbb_app_rooms_production
+# RELATIVE_URL_ROOT=/apps/rooms
