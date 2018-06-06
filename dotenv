@@ -8,4 +8,4 @@
 # DB_TIMEOUT=5000
 # DB_CONNECT_TIMEOUT=10
 # DB_DATABASE=bbb_app_rooms_production
-# RELATIVE_URL_ROOT=/apps/rooms
+# RELATIVE_URL_ROOT=apps
