@@ -1,4 +1,5 @@
 class RoomsController < ApplicationController
+  include ApplicationHelper
   before_action :set_room, only: [:show, :edit, :update, :destroy]
 
   # GET /rooms
@@ -25,6 +26,22 @@ class RoomsController < ApplicationController
   # POST /rooms.json
   def create
     @room = Room.new(room_params)
+
+    respond_to do |format|
+      if @room.save
+        format.html { redirect_to @room, notice: 'Room was successfully created.' }
+        format.json { render :show, status: :created, location: @room }
+      else
+        format.html { render :new }
+        format.json { render json: @room.errors, status: :unprocessable_entity }
+      end
+    end
+  end
+
+  # GET /rooms/launch?name=&description=&handler=
+  # GET /rooms/launch.json?
+  def launch
+    @room = Room.find_by(handler: launch_params[:handler]) || Room.new(launch_params)
 
     respond_to do |format|
       if @room.save
@@ -70,5 +87,15 @@ class RoomsController < ApplicationController
     # Never trust parameters from the scary internet, only allow the white list through.
     def room_params
       params.require(:room).permit(:name, :description, :welcome, :moderator, :viewer, :recording, :wait_moderator, :all_moderators)
+    end
+
+    # Never trust parameters from the scary internet, only allow the white list through.
+    def launch_params
+      moderator = viewer = random_password(8)
+      loop do
+        viewer = random_password(8)
+        break unless moderator == viewer
+      end
+      params.permit(:name, :description, :handler).merge({welcome: "", moderator: moderator, viewer: viewer, recording: false, wait_moderator: false, all_moderators: false})
     end
 end
