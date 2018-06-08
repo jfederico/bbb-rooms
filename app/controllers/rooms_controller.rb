@@ -1,6 +1,9 @@
+require 'json'
+
 class RoomsController < ApplicationController
   include ApplicationHelper
   before_action :set_room, only: [:show, :edit, :update, :destroy]
+  before_action :set_launch_room, only: [:launch]
 
   # GET /rooms
   # GET /rooms.json
@@ -11,6 +14,15 @@ class RoomsController < ApplicationController
   # GET /rooms/1
   # GET /rooms/1.json
   def show
+    respond_to do |format|
+      if @room == nil
+        format.html { render :error, status: @error[:status] }
+        format.json { render json: {error:  @error[:message]}, status: @error[:status] }
+      else
+        format.html { render :show }
+        format.json { render :show, status: :ok, location: @room }
+      end
+    end
   end
 
   # GET /rooms/new
@@ -41,11 +53,9 @@ class RoomsController < ApplicationController
   # GET /rooms/launch?name=&description=&handler=
   # GET /rooms/launch.json?
   def launch
-    @room = Room.find_by(handler: launch_params[:handler]) || Room.new(launch_params)
-
     respond_to do |format|
       if @room.save
-        format.html { redirect_to @room, notice: 'Room was successfully created.' }
+        format.html { redirect_to @room }
         format.json { render :show, status: :created, location: @room }
       else
         format.html { render :new }
@@ -81,7 +91,26 @@ class RoomsController < ApplicationController
   private
     # Use callbacks to share common setup or constraints between actions.
     def set_room
-      @room = Room.find(params[:id])
+      begin
+        @room = Room.find(params[:id])
+        unless cookies[@room.handler]
+          @error = { :key => 'Access forbidden', :message => "Session expired", :status => :forbidden }
+          @room = nil
+          return
+        end
+      rescue ActiveRecord::RecordNotFound => e
+        @error = { :key => 'Not found', :message => "Room was not found", :status => :not_found }
+        @room = nil
+      end
+    end
+
+    def set_launch_room
+      unless cookies[params[:handler]]
+        @error = { :key => 'Access forbidden', :message => "Session expired", :status => :forbidden }
+        @room = nil
+        return
+      end
+      @room = Room.find_by(handler: params[:handler]) || Room.new(launch_params)
     end
 
     # Never trust parameters from the scary internet, only allow the white list through.
@@ -91,11 +120,27 @@ class RoomsController < ApplicationController
 
     # Never trust parameters from the scary internet, only allow the white list through.
     def launch_params
-      moderator = viewer = random_password(8)
-      loop do
-        viewer = random_password(8)
-        break unless moderator == viewer
+      moderator = role_token
+      handler_params = JSON.parse(cookies[params[:handler]])
+      params.permit(:handler).merge(
+        {
+          name: handler_params["resource_link_title"],
+          description: handler_params["resource_link_description"],
+          welcome: "",
+          moderator: moderator,
+          viewer: role_token(moderator),
+          recording: false,
+          wait_moderator: false,
+          all_moderators: false
+        }
+      )
+    end
+
+    def role_token(base = nil)
+      token = random_password(8)
+      while token == base do
+        token = random_password(8)
       end
-      params.permit(:name, :description, :handler).merge({welcome: "", moderator: moderator, viewer: viewer, recording: false, wait_moderator: false, all_moderators: false})
+      token
     end
 end
