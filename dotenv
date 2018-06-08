@@ -9,3 +9,6 @@
 # DB_CONNECT_TIMEOUT=10
 # DB_DATABASE=bbb_app_rooms_production
 # RELATIVE_URL_ROOT=apps
+# BIGBLUEBUTTON_ENDPOINT=http://test-install.blindsidenetworks.com/bigbluebutton/
+# BIGBLUEBUTTON_SECRET=8cd8ef52e8e101574e400365b55e11a6
+# BIGBLUEBUTTON_MODERATOR_ROLES=Instructor,Faculty,Teacher,Mentor,Administrator,Admin
