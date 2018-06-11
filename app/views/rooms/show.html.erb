@@ -1,55 +1,29 @@
+<div id="body" class="bbbroom">
+
 <p id="notice"><%= notice %></p>
 
-<%= link_to 'Edit', edit_room_path(@room) %>
 
+<% if is_admin? %>
 <p>
   <strong>Handler:</strong>
   <%= @room.handler %>
+  <%= link_to 'Show all', rooms_path, :class => "btn btn-xs btn-default pull-right" %>
 </p>
-
-<p>
-  <strong>Name:</strong>
-  <%= @room.name %>
-</p>
-
-<p>
-  <strong>Description:</strong>
-  <%= @room.description %>
-</p>
-
-<p>
-  <strong>Welcome:</strong>
-  <%= @room.welcome %>
-</p>
-
-<p>
-  <strong>Moderator:</strong>
-  <%= @room.moderator %>
-</p>
-
-<p>
-  <strong>Viewer:</strong>
-  <%= @room.viewer %>
-</p>
-
-<p>
-  <strong>Recording:</strong>
-  <%= @room.recording %>
-</p>
-
-<p>
-  <strong>Wait moderator:</strong>
-  <%= @room.wait_moderator %>
-</p>
-
-<p>
-  <strong>All moderators:</strong>
-  <%= @room.all_moderators %>
-</p>
-
-<p>
-  <%= link_to "Join", meeting_join_path, :target => "_blank" %>
-</p>
-<% if is_admin? %>
-<%= link_to 'Back', rooms_path %>
 <% end %>
+
+<br>
+
+<%= link_to '', '#',:name => 'Refresh', :class => "btn btn-default glyphicon glyphicon-refresh pull-left", :onClick  => "location.reload();" %>
+
+<% if is_admin? || is_moderator %>
+<%= link_to '', edit_room_path(@room), :name => 'Edit', :class => "btn btn-default glyphicon glyphicon-edit pull-right" %>
+<% end %>
+
+<br>
+<h1><%= @room.name %></h1>
+
+<h3><%= @room.description %></h3>
+
+<%= link_to "Join", meeting_join_path, :target => "_blank", :class => "btn btn-primary", :type => "button"  %>
+
+</div>

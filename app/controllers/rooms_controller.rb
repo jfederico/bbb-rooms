@@ -111,7 +111,8 @@ class RoomsController < ApplicationController
     }
     bbb.create_meeting(@room.name, @room.handler, options)
 
-    join_meeting_url = bbb.join_meeting_url(@room.handler, username(is_moderator? ? 'Moderator' : 'Viewer'), is_moderator? ? options[:moderatorPW] : options[:viewerPW])
+    role_token = is_moderator || @room.all_moderators ? options[:moderatorPW] : options[:viewerPW]
+    join_meeting_url = bbb.join_meeting_url(@room.handler, username(is_moderator? ? 'Moderator' : 'Viewer'), role_token)
 
     if @error
       respond_to do |format|

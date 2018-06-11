@@ -65,3 +65,9 @@ gem 'tzinfo-data', platforms: [:mingw, :mswin, :x64_mingw, :jruby]
 gem 'json'
 
 gem 'bigbluebutton-api-ruby'
+
+gem 'bootstrap-sass', '~> 3.3.7'
+gem 'jquery-rails'
+gem 'jquery-ui-rails'
+gem 'font-awesome-rails'
+gem "jquery-fileupload-rails"
