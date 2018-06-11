@@ -4,6 +4,7 @@ require 'json'
 class RoomsController < ApplicationController
   include ApplicationHelper
   include BigBlueButtonHelper
+  include LtiHelper
   before_action :set_room, only: [:show, :edit, :update, :destroy, :meeting_join]
   before_action :set_launch_room, only: [:launch]
 
@@ -16,6 +17,7 @@ class RoomsController < ApplicationController
   # GET /rooms/1
   # GET /rooms/1.json
   def show
+    @handler_params = JSON.parse(cookies[@room[:handler]])
     respond_to do |format|
       if !@room
         format.html { render :error, status: @error[:status] }
@@ -79,6 +81,7 @@ class RoomsController < ApplicationController
   # GET /rooms/launch?name=&description=&handler=
   # GET /rooms/launch.json?
   def launch
+    @handler_params = JSON.parse(cookies[params[:handler]])
     respond_to do |format|
       if @room.save
         format.html { redirect_to @room }
@@ -93,7 +96,7 @@ class RoomsController < ApplicationController
   # GET /rooms/:id/meeting/join
   # GET /rooms/:id/meeting/join.json
   def meeting_join
-    handler_params = JSON.parse(cookies[@room.handler])
+    @handler_params = JSON.parse(cookies[@room[:handler]])
     bbb ||= BigBlueButton::BigBlueButtonApi.new(bigbluebutton_endpoint, bigbluebutton_secret, "0.8", true)
     if !bbb
       @error = { :key => "BBBAPICallInvalid", :message => "BBB API call invalid.", :status => 500 }
@@ -103,13 +106,12 @@ class RoomsController < ApplicationController
       :moderatorPW => @room.moderator,
       :attendeePW => @room.viewer,
       :welcome => @room.welcome,
+      :record => @room.recording,
       :logoutURL => 'javascript:window.close();',
     }
     bbb.create_meeting(@room.name, @room.handler, options)
 
-
-    is_moderator = bigbluebutton_is_moderator(handler_params["roles"])
-    join_meeting_url = bbb.join_meeting_url(@room.handler, bigbluebutton_username(handler_params, is_moderator), is_moderator ? options[:moderatorPW] : options[:viewerPW])
+    join_meeting_url = bbb.join_meeting_url(@room.handler, username(is_moderator? ? 'Moderator' : 'Viewer'), is_moderator? ? options[:moderatorPW] : options[:viewerPW])
 
     if @error
       respond_to do |format|
@@ -155,15 +157,14 @@ class RoomsController < ApplicationController
 
     # Never trust parameters from the scary internet, only allow the white list through.
     def launch_params
-      moderator = role_token
-      handler_params = JSON.parse(cookies[params[:handler]])
+      moderator_token = role_token
       params.permit(:handler).merge(
         {
-          name: handler_params["resource_link_title"],
-          description: handler_params["resource_link_description"],
+          name: @handler_params["resource_link_title"],
+          description: @handler_params["resource_link_description"],
           welcome: "",
-          moderator: moderator,
-          viewer: role_token(moderator),
+          moderator: moderator_token,
+          viewer: role_token(moderator_token),
           recording: false,
           wait_moderator: false,
           all_moderators: false

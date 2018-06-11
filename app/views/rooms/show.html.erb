@@ -1,5 +1,7 @@
 <p id="notice"><%= notice %></p>
 
+<%= link_to 'Edit', edit_room_path(@room) %>
+
 <p>
   <strong>Handler:</strong>
   <%= @room.handler %>
@@ -48,6 +50,6 @@
 <p>
   <%= link_to "Join", meeting_join_path, :target => "_blank" %>
 </p>
-
-<%= link_to 'Edit', edit_room_path(@room) %> |
+<% if is_admin? %>
 <%= link_to 'Back', rooms_path %>
+<% end %>

@@ -15,31 +15,7 @@ module BigBlueButtonHelper
     secret
   end
 
-  def bigbluebutton_is_moderator(roles)
-    roles = roles.split(",")
-    moderators = (ENV['BIGBLUEBUTTON_MODERATOR_ROLES'] || 'administrator,instructor').split(",")
-  end
-
-  def bigbluebutton_username(launch_params, is_moderator = false)
-    if launch_params["lis_person_name_full"]
-      launch_params["lis_person_name_full"]
-    elsif launch_params["lis_person_name_given"] && launch_params["lis_person_name_family"]
-      launch_params["lis_person_name_given"] + " " + launch_params["lis_person_name_family"]
-    elsif launch_params["lis_person_contact_email_primary"]
-      launch_params["lis_person_contact_email_primary"].split("@").first
-    elsif is_moderator
-      'Moderator'
-    else
-      'Attendee'
-    end
-  end
-
-  def is_moderator?(launch_roles)
-    moderator_roles = (ENV['BIGBLUEBUTTON_MODERATOR_ROLES'] || BIGBLUEBUTTON_MODERATOR_ROLES).split(",")
-    launch_roles = launch_roles.split(",")
-    moderator_roles.each { |role|
-      return true if launch_roles.include?(role)
-    }
-    false
+  def bigbluebutton_moderator_roles
+    (ENV['BIGBLUEBUTTON_MODERATOR_ROLES'] || BIGBLUEBUTTON_MODERATOR_ROLES).split(",")
   end
 end
