@@ -17,7 +17,6 @@ class RoomsController < ApplicationController
   # GET /rooms/1
   # GET /rooms/1.json
   def show
-    @handler_params = JSON.parse(cookies[@room[:handler]])
     respond_to do |format|
       if !@room
         format.html { render :error, status: @error[:status] }
@@ -45,7 +44,7 @@ class RoomsController < ApplicationController
 
     respond_to do |format|
       if @room.save
-        format.html { redirect_to @room, notice: 'Room was successfully created.' }
+        format.html { redirect_to @room, notice: t('default.room.created') }
         format.json { render :show, status: :created, location: @room }
       else
         format.html { render :new }
@@ -59,7 +58,7 @@ class RoomsController < ApplicationController
   def update
     respond_to do |format|
       if @room.update(room_params)
-        format.html { redirect_to @room, notice: 'Room was successfully updated.' }
+        format.html { redirect_to @room, notice: t('default.room.updated') }
         format.json { render :show, status: :ok, location: @room }
       else
         format.html { render :edit }
@@ -73,7 +72,7 @@ class RoomsController < ApplicationController
   def destroy
     @room.destroy
     respond_to do |format|
-      format.html { redirect_to rooms_url, notice: 'Room was successfully destroyed.' }
+      format.html { redirect_to rooms_url, notice: t('default.room.destroyed') }
       format.json { head :no_content }
     end
   end
@@ -81,7 +80,6 @@ class RoomsController < ApplicationController
   # GET /rooms/launch?name=&description=&handler=
   # GET /rooms/launch.json?
   def launch
-    @handler_params = JSON.parse(cookies[params[:handler]])
     respond_to do |format|
       if @room.save
         format.html { redirect_to @room }
@@ -96,10 +94,9 @@ class RoomsController < ApplicationController
   # GET /rooms/:id/meeting/join
   # GET /rooms/:id/meeting/join.json
   def meeting_join
-    @handler_params = JSON.parse(cookies[@room[:handler]])
     bbb ||= BigBlueButton::BigBlueButtonApi.new(bigbluebutton_endpoint, bigbluebutton_secret, "0.8", true)
     if !bbb
-      @error = { :key => "BBBAPICallInvalid", :message => "BBB API call invalid.", :status => 500 }
+      @error = { :key => t('error.bigbluebutton.invalidrequest.key'), :message => t('error.bigbluebutton.invalidrequest.message'), :suggestion => t('error.bigbluebutton.invalidrequest.suggestion'), :status => :internal_server_error }
     end
 
     options = {
@@ -112,7 +109,7 @@ class RoomsController < ApplicationController
     bbb.create_meeting(@room.name, @room.handler, options)
 
     role_token = is_moderator || @room.all_moderators ? options[:moderatorPW] : options[:viewerPW]
-    join_meeting_url = bbb.join_meeting_url(@room.handler, username(is_moderator? ? 'Moderator' : 'Viewer'), role_token)
+    join_meeting_url = bbb.join_meeting_url(@room.handler, username(is_moderator? ? t('default.bigbluebutton.moderator') : t('default.bigbluebutton.viewer')), role_token)
 
     if @error
       respond_to do |format|
@@ -131,12 +128,13 @@ class RoomsController < ApplicationController
       begin
         @room = Room.find(params[:id])
         unless cookies[@room.handler]
-          @error = { :key => 'Access forbidden', :message => "Session expired", :status => :forbidden }
+          @error = { :key => t('error.room.forbiden.key'), :message => t('error.room.forbiden.message'), :suggestion => t('error.room.forbiden.suggestion'), :status => :forbidden }
           @room = nil
           return
         end
+        @handler_params = JSON.parse(cookies[@room[:handler]])
       rescue ActiveRecord::RecordNotFound => e
-        @error = { :key => 'Not found', :message => "Room was not found", :status => :not_found }
+        @error = { :key => t('error.room.notfound.key'), :message => t('error.room.notfound.message'), :suggestion => t('error.room.notfound.suggestion'), :status => :not_found }
         @room = nil
       end
     end
@@ -144,10 +142,11 @@ class RoomsController < ApplicationController
     def set_launch_room
       @error = nil
       unless cookies[params[:handler]]
-        @error = { :key => 'Access forbidden', :message => "Session expired", :status => :forbidden }
+        @error = { :key => t('error.room.forbiden.key'), :message => t('error.room.forbiden.message'), :suggestion => t('error.room.forbiden.suggestion'), :status => :forbidden }
         @room = nil
         return
       end
+      @handler_params = JSON.parse(cookies[params[:handler]])
       @room = Room.find_by(handler: params[:handler]) || Room.new(launch_params)
     end
 

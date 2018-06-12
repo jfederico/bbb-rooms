@@ -5,14 +5,14 @@
 <table>
   <thead>
     <tr>
-      <th>Name</th>
-      <th>Description</th>
-      <th>Welcome</th>
-      <th>Moderator</th>
-      <th>Viewer</th>
-      <th>Recording</th>
-      <th>Wait moderator</th>
-      <th>All moderators</th>
+      <th><%= t'(default.room.name') %></th>
+      <th><%= t'(default.room.description') %></th>
+      <th><%= t'(default.room.welcome') %></th>
+      <th><%= t'(default.room.moderator') %></th>
+      <th><%= t'(default.room.viewer') %></th>
+      <th><%= t'(default.room.recording') %></th>
+      <th><%= t'(default.room.waitmoderator') %></th>
+      <th><%= t'(default.room.allmoderators') %></th>
       <th colspan="3"></th>
     </tr>
   </thead>
@@ -28,9 +28,9 @@
         <td><%= room.recording %></td>
         <td><%= room.wait_moderator %></td>
         <td><%= room.all_moderators %></td>
-        <td><%= link_to 'Show', room %></td>
-        <td><%= link_to 'Edit', edit_room_path(room) %></td>
-        <td><%= link_to 'Destroy', room, method: :delete, data: { confirm: 'Are you sure?' } %></td>
+        <td><%= link_to t('default.admin.showroom'), room %></td>
+        <td><%= link_to t('default.admin.editroom'), edit_room_path(room) %></td>
+        <td><%= link_to t('default.admin.destroyroom'), room, method: :delete, data: { confirm: t('default.admin.confirm') } %></td>
       </tr>
     <% end %>
   </tbody>
@@ -38,4 +38,4 @@
 
 <br>
 
-<%= link_to 'New Room', new_room_path %>
+<%= link_to t('default.admin.newroom'), new_room_path %>
