@@ -1,31 +1,32 @@
 module LtiHelper
   def username(default)
-    if @handler_params["lis_person_name_full"]
-      @handler_params["lis_person_name_full"]
-    elsif launch_params["lis_person_name_given"] && launch_params["lis_person_name_family"]
-      launch_params["lis_person_name_given"] + " " + launch_params["lis_person_name_family"]
-    elsif launch_params["lis_person_contact_email_primary"]
-      launch_params["lis_person_contact_email_primary"].split("@").first
-    else
-      default
+    if @handler_params['lis_person_name_full']
+      return @handler_params['lis_person_name_full']
     end
+    if launch_params['lis_person_name_given'] || launch_params['lis_person_name_family']
+      return "#{launch_params['lis_person_name_given']} #{launch_params['lis_person_name_family']}"
+    end
+    if launch_params['lis_person_contact_email_primary']
+      return launch_params['lis_person_contact_email_primary'].split("@").first
+    end
+    default
   end
 
-  def is_moderator?
-    bigbluebutton_moderator_roles.each { |role|
-      return true if is?(role)
-    }
+  def moderator?
+    bigbluebutton_moderator_roles.each do |role|
+      return true if role?(role)
+    end
     false
   end
 
-  def is_admin?
-    is?("Administrator")
+  def admin?
+    role?("Administrator")
   end
 
-  def is?(role)
-    launch_roles.each { |launch_role|
+  def role?(role)
+    launch_roles.each do |launch_role|
       return true if launch_role.match(/#{role}/i)
-    }
+    end
     false
   end
 

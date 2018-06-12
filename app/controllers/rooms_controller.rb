@@ -5,8 +5,9 @@ class RoomsController < ApplicationController
   include ApplicationHelper
   include BigBlueButtonHelper
   include LtiHelper
-  before_action :set_room, only: [:show, :edit, :update, :destroy, :meeting_join]
-  before_action :set_launch_room, only: [:launch]
+  include RoomsHelper
+  before_action :set_room, only: %i[show edit update destroy meeting_join]
+  before_action :set_launch_room, only: %i[launch]
 
   # GET /rooms
   # GET /rooms.json
@@ -18,12 +19,12 @@ class RoomsController < ApplicationController
   # GET /rooms/1.json
   def show
     respond_to do |format|
-      if !@room
-        format.html { render :error, status: @error[:status] }
-        format.json { render json: {error:  @error[:message]}, status: @error[:status] }
-      else
+      if @room
         format.html { render :show }
         format.json { render :show, status: :ok, location: @room }
+      else
+        format.html { render :error, status: @error[:status] }
+        format.json { render json: {error:  @error[:message]}, status: @error[:status] }
       end
     end
   end
@@ -34,8 +35,7 @@ class RoomsController < ApplicationController
   end
 
   # GET /rooms/1/edit
-  def edit
-  end
+  def edit; end
 
   # POST /rooms
   # POST /rooms.json
@@ -94,27 +94,10 @@ class RoomsController < ApplicationController
   # GET /rooms/:id/meeting/join
   # GET /rooms/:id/meeting/join.json
   def meeting_join
-    bbb ||= BigBlueButton::BigBlueButtonApi.new(bigbluebutton_endpoint, bigbluebutton_secret, "0.8", true)
-    if !bbb
-      @error = { :key => t('error.bigbluebutton.invalidrequest.key'), :message => t('error.bigbluebutton.invalidrequest.message'), :suggestion => t('error.bigbluebutton.invalidrequest.suggestion'), :status => :internal_server_error }
-    end
-
-    options = {
-      :moderatorPW => @room.moderator,
-      :attendeePW => @room.viewer,
-      :welcome => @room.welcome,
-      :record => @room.recording,
-      :logoutURL => 'javascript:window.close();',
-    }
-    bbb.create_meeting(@room.name, @room.handler, options)
-
-    role_token = is_moderator || @room.all_moderators ? options[:moderatorPW] : options[:viewerPW]
-    join_meeting_url = bbb.join_meeting_url(@room.handler, username(is_moderator? ? t('default.bigbluebutton.moderator') : t('default.bigbluebutton.viewer')), role_token)
-
     if @error
       respond_to do |format|
         format.html { render :error, status: @error[:status] }
-        format.json { render json: {error:  @error[:message]}, status: @error[:status] }
+        format.json { render json: { error:  @error[:message] }, status: @error[:status] }
       end
     else
       redirect_to join_meeting_url
@@ -122,19 +105,39 @@ class RoomsController < ApplicationController
   end
 
   private
+
+    def join_meeting_url
+      return unless @room
+      bbb ||= BigBlueButton::BigBlueButtonApi.new(bigbluebutton_endpoint, bigbluebutton_secret, "0.8", true)
+      unless bbb
+        @error = { key: t('error.bigbluebutton.invalidrequest.key'), message:  t('error.bigbluebutton.invalidrequest.message'), suggestion: t('error.bigbluebutton.invalidrequest.suggestion'), :status => :internal_server_error }
+        return
+      end
+      bbb.create_meeting(@room.name, @room.handler, {
+        :moderatorPW => @room.moderator,
+        :attendeePW => @room.viewer,
+        :welcome => @room.welcome,
+        :record => @room.recording,
+        :logoutURL => autoclose_url,
+      })
+      role_token = (moderator? || @room.all_moderators) ? @room.moderator : @room.viewer
+      role_identifier = moderator? ? t('default.bigbluebutton.moderator') : t('default.bigbluebutton.viewer')
+      bbb.join_meeting_url(@room.handler, username(role_identifier), role_token)
+    end
+
     # Use callbacks to share common setup or constraints between actions.
     def set_room
       @error = nil
       begin
         @room = Room.find(params[:id])
         unless cookies[@room.handler]
-          @error = { :key => t('error.room.forbiden.key'), :message => t('error.room.forbiden.message'), :suggestion => t('error.room.forbiden.suggestion'), :status => :forbidden }
+          @error = { key: t('error.room.forbiden.key'), message:  t('error.room.forbiden.message'), suggestion: t('error.room.forbiden.suggestion'), :status => :forbidden }
           @room = nil
           return
         end
         @handler_params = JSON.parse(cookies[@room[:handler]])
       rescue ActiveRecord::RecordNotFound => e
-        @error = { :key => t('error.room.notfound.key'), :message => t('error.room.notfound.message'), :suggestion => t('error.room.notfound.suggestion'), :status => :not_found }
+        @error = { key: t('error.room.notfound.key'), message:  t('error.room.notfound.message'), suggestion: t('error.room.notfound.suggestion'), :status => :not_found }
         @room = nil
       end
     end
@@ -142,7 +145,7 @@ class RoomsController < ApplicationController
     def set_launch_room
       @error = nil
       unless cookies[params[:handler]]
-        @error = { :key => t('error.room.forbiden.key'), :message => t('error.room.forbiden.message'), :suggestion => t('error.room.forbiden.suggestion'), :status => :forbidden }
+        @error = { key: t('error.room.forbiden.key'), message:  t('error.room.forbiden.message'), suggestion: t('error.room.forbiden.suggestion'), :status => :forbidden }
         @room = nil
         return
       end
@@ -158,23 +161,21 @@ class RoomsController < ApplicationController
     # Never trust parameters from the scary internet, only allow the white list through.
     def launch_params
       moderator_token = role_token
-      params.permit(:handler).merge(
-        {
-          name: @handler_params["resource_link_title"],
-          description: @handler_params["resource_link_description"],
-          welcome: "",
-          moderator: moderator_token,
-          viewer: role_token(moderator_token),
-          recording: false,
-          wait_moderator: false,
-          all_moderators: false
-        }
-      )
+      params.permit(:handler).merge({
+        name: @handler_params['resource_link_title'],
+        description: @handler_params['resource_link_description'],
+        welcome: "",
+        moderator: moderator_token,
+        viewer: role_token(moderator_token),
+        recording: false,
+        wait_moderator: false,
+        all_moderators: false
+      })
     end
 
     def role_token(base = nil)
       token = random_password(8)
-      while token == base do
+      while token == base
         token = random_password(8)
       end
       token
