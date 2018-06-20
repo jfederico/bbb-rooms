@@ -32,32 +32,39 @@
 en:
   default:
     app:
-      error:        "Error"
+      error:          "Error"
     admin:
-      back:         "Back"
-      handler:      "Handler"
-      newroom:      "New Room"
-      showall:      "Show all"
-      showroom:     "Show"
-      editroom:     "Edit"
-      destroyroom:  "Destroy"
-      confirm:      "Are you sure?"
+      back:           "Back"
+      handler:        "Handler"
+      newroom:        "New Room"
+      showall:        "Show all"
+      showroom:       "Show"
+      editroom:       "Edit"
+      destroyroom:    "Destroy"
+      confirm:        "Are you sure?"
     bigbluebutton:
-      moderator:    "Moderator"
-      viewer:       "Viewer"
+      moderator:      "Moderator"
+      viewer:         "Viewer"
     room:
-      created:      "Room was successfully created."
-      edit:         "Edit"
-      editing:      "Editing Room"
-      join:         "Join"
-      name:         "Name"
-      description:  "Description"
-      welcome:      "Welcome"
-      moderator:    "Moderator token"
-      viewer:       "Viewer token"
-      recording:    "Recording"
-      waitmoderator: "Wait moderator"
-      allmoderators: "All moderators"
+      created:        "Room was successfully created."
+      edit:           "Edit"
+      editing:        "Editing Room"
+      join:           "Join"
+      name:           "Name"
+      description:    "Description"
+      welcome:        "Welcome"
+      moderator:      "Moderator token"
+      viewer:         "Viewer token"
+      recording:      "Recording"
+      waitmoderator:  "Wait moderator"
+      allmoderators:  "All moderators"
+      update:         "Update"
+      cancel:         "Cancel"
+      tooltip:
+        recording:    "The session may be recorded"
+        waitmoderator: "Viewers are unable to join until a moderator joins"
+        allmoderators: "All users will join as moderators"
+
 
   error:
     bigbluebutton:

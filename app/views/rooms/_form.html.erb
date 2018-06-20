@@ -1,4 +1,4 @@
-<%= form_with(model: room, local: true) do |form| %>
+<%= form_with(model: room, local: true, class: "form fill") do |form| %>
   <% if room.errors.any? %>
     <div id="error_explanation">
       <h2><%= pluralize(room.errors.count, "error") %> prohibited this room from being saved:</h2>
@@ -11,47 +11,44 @@
     </div>
   <% end %>
 
-  <div class="field">
-    <%= form.label :name %>
-    <%= form.text_field :name %>
+  <div class="field form-group input-group col-6">
+    <%= form.label :name %>&nbsp;<span class="text-muted small">*Required</span><br>
+    <%= form.text_field :name, :required => true, class: "form-control input col-6" %>
   </div>
 
-  <div class="field">
+  <div class="field form-group input-group col-8">
     <%= form.label :description %>
-    <%= form.text_field :description %>
+    <%= form.text_area :description, class: 'form-control input col-8' %>
   </div>
 
-  <div class="field">
+  <div class="field form-group input-group col-8">
     <%= form.label :welcome %>
-    <%= form.text_field :welcome %>
+    <%= form.text_area :welcome, class: 'form-control input col-8' %>
   </div>
 
-  <div class="field">
-    <%= form.label :moderator %>
-    <%= form.text_field :moderator %>
+  <%= form.hidden_field :moderator, value: @room.moderator %>
+  <%= form.hidden_field :viewer, value: @room.viewer %>
+
+  <div class="field form-group input-group">
+    <%= form.check_box :recording %>&nbsp;
+    <b><%= t('default.room.recording') %></b>&nbsp;
+    <i class="glyphicon glyphicon-info-sign" data-toggle="tooltip" title="<%= t('default.room.tooltip.recording') %>"></i><br>
   </div>
 
-  <div class="field">
-    <%= form.label :viewer %>
-    <%= form.text_field :viewer %>
+  <div class="field form-group input-group">
+    <%= form.check_box :wait_moderator %>&nbsp;
+    <b><%= t('default.room.waitmoderator') %></b>&nbsp;
+    <i class="glyphicon glyphicon-info-sign" data-toggle="tooltip" title="<%= t('default.room.tooltip.waitmoderator') %>"></i><br>
   </div>
 
-  <div class="field">
-    <%= form.label :recording %>
-    <%= form.check_box :recording %>
-  </div>
-
-  <div class="field">
-    <%= form.label :wait_moderator %>
-    <%= form.check_box :wait_moderator %>
-  </div>
-
-  <div class="field">
-    <%= form.label :all_moderators %>
-    <%= form.check_box :all_moderators %>
+  <div class="field form-group input-group">
+    <%= form.check_box :all_moderators %>&nbsp;
+    <b><%= t('default.room.allmoderators') %></b>&nbsp;
+    <i class="glyphicon glyphicon-info-sign" data-toggle="tooltip" title="<%= t('default.room.tooltip.allmoderators') %>"></i><br>
   </div>
 
   <div class="actions">
-    <%= form.submit %>
+    <%= form.submit class: "btn btn-primary" %>
+    <%= form.button t('default.room.cancel'), :class => "btn btn-default", :label => "Cancel" %>
   </div>
 <% end %>
