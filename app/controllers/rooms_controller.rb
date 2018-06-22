@@ -8,8 +8,8 @@ class RoomsController < ApplicationController
   include LtiHelper
   include RoomsHelper
   before_action :set_room, only: %i[show edit update destroy meeting_join]
-  before_action :set_launch_room, only: %i[launch]
   before_action :check_for_cancel, :only => [:create, :update]
+  before_action :set_launch_room, only: %i[launch]
 
   # GET /rooms
   # GET /rooms.json
@@ -128,28 +128,37 @@ class RoomsController < ApplicationController
 
     # Use callbacks to share common setup or constraints between actions.
     def set_room
+      @launch_params = nil
+      @room = nil
+      @error = nil
       begin
         @room = Room.find(params[:id])
-        unless Rails.cache.exist?(@room.handler)
+        unless session.key?(@room.handler) || session['admin']
+          @room = nil
           @error = { key: t('error.room.forbiden.key'), message:  t('error.room.forbiden.message'), suggestion: t('error.room.forbiden.suggestion'), :status => :forbidden }
           return
         end
-        @handler_params = Rails.cache.read(@room.handler)
+        @launch_params = session[@room.handler]
       rescue ActiveRecord::RecordNotFound => e
         @error = { key: t('error.room.notfound.key'), message:  t('error.room.notfound.message'), suggestion: t('error.room.notfound.suggestion'), :status => :not_found }
       end
     end
 
     def set_launch_room
+      @launch_params = nil
+      @room = nil
+      @error = nil
+      session['admin'] = false
       url = untokenize(params[:token], 'abcde-12345', 'rooms')
       sso = JSON.parse(RestClient.get(url, headers={}))
       unless sso["valid"]
         @error = { key: t('error.room.forbiden.key'), message:  t('error.room.forbiden.message'), suggestion: t('error.room.forbiden.suggestion'), :status => :forbidden }
         return
       end
-      @handler_params = sso["message"]
-      Rails.cache.write(params[:handler], @handler_params)
-      @room = Room.find_by(handler: params[:handler]) || Room.new(launch_params)
+      @launch_params = sso["message"]
+      @room = Room.find_by(handler: params[:handler]) || Room.new(@launch_params)
+      session[params[:handler]] = @launch_params
+      session['admin'] = admin?
     end
 
     # Never trust parameters from the scary internet, only allow the white list through.
@@ -161,8 +170,8 @@ class RoomsController < ApplicationController
     def launch_params
       moderator_token = role_token
       params.permit(:handler).merge({
-        name: @handler_params['resource_link_title'],
-        description: @handler_params['resource_link_description'],
+        name: @launch_params['resource_link_title'],
+        description: @launch_params['resource_link_description'],
         welcome: "",
         moderator: moderator_token,
         viewer: role_token(moderator_token),

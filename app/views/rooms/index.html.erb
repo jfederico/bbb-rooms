@@ -5,6 +5,7 @@
 <table>
   <thead>
     <tr>
+      <th><%= t('default.room.handler') %></th>
       <th><%= t('default.room.name') %></th>
       <th><%= t('default.room.description') %></th>
       <th><%= t('default.room.welcome') %></th>
@@ -20,6 +21,7 @@
   <tbody>
     <% @rooms.each do |room| %>
       <tr>
+        <td><%= room.handler %></td>
         <td><%= room.name %></td>
         <td><%= room.description %></td>
         <td><%= room.welcome %></td>
@@ -28,9 +30,9 @@
         <td><%= room.recording %></td>
         <td><%= room.wait_moderator %></td>
         <td><%= room.all_moderators %></td>
-        <td><%= link_to t('default.admin.showroom'), room %></td>
-        <td><%= link_to t('default.admin.editroom'), edit_room_path(room) %></td>
-        <td><%= link_to t('default.admin.destroyroom'), room, method: :delete, data: { confirm: t('default.admin.confirm') } %></td>
+        <td><%= link_to t('default.admin.showroom'), room, class: "btn btn-xs btn-default" %></td>
+        <td><%= link_to t('default.admin.editroom'), edit_room_path(room), class: "btn btn-xs btn-default" %></td>
+        <td><%= link_to t('default.admin.destroyroom'), room, method: :delete, class: "btn btn-xs btn-danger", data: { confirm: t('default.admin.confirm') } %></td>
       </tr>
     <% end %>
   </tbody>
@@ -38,4 +40,4 @@
 
 <br>
 
-<%= link_to t('default.admin.newroom'), new_room_path %>
+<%= link_to t('default.admin.newroom'), new_room_path, class: "btn btn-xs btn-default" %>

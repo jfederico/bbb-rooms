@@ -1,7 +1,7 @@
 module LtiHelper
   def username(default)
-    if @handler_params['lis_person_name_full']
-      return @handler_params['lis_person_name_full']
+    if @launch_params['lis_person_name_full']
+      return @launch_params['lis_person_name_full']
     end
     if launch_params['lis_person_name_given'] || launch_params['lis_person_name_family']
       return "#{launch_params['lis_person_name_given']} #{launch_params['lis_person_name_family']}"
@@ -31,6 +31,8 @@ module LtiHelper
   end
 
   def launch_roles
-    @handler_params["roles"].split(",")
+    return [] unless @launch_params
+    return [] unless @launch_params.key?("roles")
+    @launch_params["roles"].split(",")
   end
 end
