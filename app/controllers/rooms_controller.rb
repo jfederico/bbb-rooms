@@ -111,7 +111,7 @@ class RoomsController < ApplicationController
       return unless @room
       bbb ||= BigBlueButton::BigBlueButtonApi.new(bigbluebutton_endpoint, bigbluebutton_secret, "0.8", true)
       unless bbb
-        @error = { key: t('error.bigbluebutton.invalidrequest.key'), message:  t('error.bigbluebutton.invalidrequest.message'), suggestion: t('error.bigbluebutton.invalidrequest.suggestion'), :status => :internal_server_error }
+        @error = { key: t('error.bigbluebutton.invalidrequest.code'), message:  t('error.bigbluebutton.invalidrequest.message'), suggestion: t('error.bigbluebutton.invalidrequest.suggestion'), :status => :internal_server_error }
         return
       end
       bbb.create_meeting(@room.name, @room.handler, {
@@ -135,12 +135,12 @@ class RoomsController < ApplicationController
         @room = Room.find(params[:id])
         unless session.key?(@room.handler) || session['admin']
           @room = nil
-          @error = { key: t('error.room.forbiden.key'), message:  t('error.room.forbiden.message'), suggestion: t('error.room.forbiden.suggestion'), :status => :forbidden }
+          @error = { key: t('error.room.forbiden.code'), message:  t('error.room.forbiden.message'), suggestion: t('error.room.forbiden.suggestion'), :status => :forbidden }
           return
         end
         @launch_params = session[@room.handler]
       rescue ActiveRecord::RecordNotFound => e
-        @error = { key: t('error.room.notfound.key'), message:  t('error.room.notfound.message'), suggestion: t('error.room.notfound.suggestion'), :status => :not_found }
+        @error = { key: t('error.room.notfound.code'), message:  t('error.room.notfound.message'), suggestion: t('error.room.notfound.suggestion'), :status => :not_found }
       end
     end
 
@@ -149,10 +149,15 @@ class RoomsController < ApplicationController
       @room = nil
       @error = nil
       session['admin'] = false
-      url = untokenize(params[:token], 'abcde-12345', 'rooms')
+      secret = ENV['LTI_TOOL_PROVIDER_SECRET'] || ''
+      url = untokenize(params[:token], secret, 'rooms')
+      unless url
+        @error = { key: t('error.room.invalidsecret.code'), message:  t('error.room.invalidsecret.message'), suggestion: t('error.room.invalidsecret.suggestion'), :status => :forbidden }
+        return
+      end
       sso = JSON.parse(RestClient.get(url, headers={}))
       unless sso["valid"]
-        @error = { key: t('error.room.forbiden.key'), message:  t('error.room.forbiden.message'), suggestion: t('error.room.forbiden.suggestion'), :status => :forbidden }
+        @error = { key: t('error.room.forbiden.code'), message:  t('error.room.forbiden.message'), suggestion: t('error.room.forbiden.suggestion'), :status => :forbidden }
         return
       end
       @launch_params = sso["message"]

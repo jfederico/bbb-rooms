@@ -12,3 +12,4 @@
 # BIGBLUEBUTTON_ENDPOINT=http://test-install.blindsidenetworks.com/bigbluebutton/
 # BIGBLUEBUTTON_SECRET=8cd8ef52e8e101574e400365b55e11a6
 # BIGBLUEBUTTON_MODERATOR_ROLES=Instructor,Faculty,Teacher,Mentor,Administrator,Admin
+# LTI_TOOL_PROVIDER_SECRET=ChangeMe

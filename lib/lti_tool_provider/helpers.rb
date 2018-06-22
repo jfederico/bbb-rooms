@@ -11,13 +11,21 @@ module LtiToolProvider
     end
 
     def tokenize(str, secret, salt)
-      crypt = crypter(secret, salt)
-      crypt.encrypt_and_sign(str.ljust(128, ' '))
+      begin
+        crypt = crypter(secret, salt)
+        crypt.encrypt_and_sign(str.ljust(128, ' '))
+      rescue
+        nil
+      end
     end
 
     def untokenize(str, secret, salt)
-      crypt = crypter(secret, salt)
-      crypt.decrypt_and_verify(str).strip
+      begin
+        crypt = crypter(secret, salt)
+        crypt.decrypt_and_verify(str).strip
+      rescue
+        nil
+      end
     end
 
     def crypter(secret, salt)
