@@ -1,5 +1,6 @@
 require 'bigbluebutton_api'
 require 'json'
+require 'rest-client'
 
 class RoomsController < ApplicationController
   include ApplicationHelper
@@ -47,7 +48,7 @@ class RoomsController < ApplicationController
         format.json { render :show, status: :created, location: @room }
       else
         format.html { render :new }
-        format.json { render json: @room.errors, status: :unprocessable_entity }
+        format.json { render json: @error, status: :unprocessable_entity }
       end
     end
   end
@@ -61,7 +62,7 @@ class RoomsController < ApplicationController
         format.json { render :show, status: :ok, location: @room }
       else
         format.html { render :edit }
-        format.json { render json: @room.errors, status: :unprocessable_entity }
+        format.json { render json: @error, status: :unprocessable_entity }
       end
     end
   end
@@ -80,12 +81,12 @@ class RoomsController < ApplicationController
   # GET /rooms/launch.json?
   def launch
     respond_to do |format|
-      if @room.save
+      if @room
         format.html { redirect_to @room }
         format.json { render :show, status: :created, location: @room }
       else
-        format.html { render :new }
-        format.json { render json: @room.errors, status: :unprocessable_entity }
+        format.html { render :error }
+        format.json { render json: @error, status: :unprocessable_entity }
       end
     end
   end
@@ -126,29 +127,27 @@ class RoomsController < ApplicationController
 
     # Use callbacks to share common setup or constraints between actions.
     def set_room
-      @error = nil
       begin
         @room = Room.find(params[:id])
-        unless cookies[@room.handler]
+        unless Rails.cache.exist?(@room.handler)
           @error = { key: t('error.room.forbiden.key'), message:  t('error.room.forbiden.message'), suggestion: t('error.room.forbiden.suggestion'), :status => :forbidden }
-          @room = nil
           return
         end
-        @handler_params = JSON.parse(cookies[@room[:handler]])
+        @handler_params = Rails.cache.read(@room.handler)
       rescue ActiveRecord::RecordNotFound => e
         @error = { key: t('error.room.notfound.key'), message:  t('error.room.notfound.message'), suggestion: t('error.room.notfound.suggestion'), :status => :not_found }
-        @room = nil
       end
     end
 
     def set_launch_room
-      @error = nil
-      unless cookies[params[:handler]]
+      url = untokenize(params[:token], 'abcde-12345', 'rooms')
+      sso = JSON.parse(RestClient.get(url, headers={}))
+      unless sso["valid"]
         @error = { key: t('error.room.forbiden.key'), message:  t('error.room.forbiden.message'), suggestion: t('error.room.forbiden.suggestion'), :status => :forbidden }
-        @room = nil
         return
       end
-      @handler_params = JSON.parse(cookies[params[:handler]])
+      @handler_params = sso["message"]
+      Rails.cache.write(params[:handler], @handler_params)
       @room = Room.find_by(handler: params[:handler]) || Room.new(launch_params)
     end
 
