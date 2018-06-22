@@ -6,6 +6,8 @@ Rails.application.routes.draw do
       post ":id/meeting/end", :to => "rooms#meeting_end", as: :meeting_end
       scope ":id/meetings" do
       end
+      scope ":id/recordings" do
+      end
     end
     resources :rooms
   end

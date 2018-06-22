@@ -13,17 +13,17 @@
 
   <div class="field form-group input-group col-6">
     <%= form.label :name %>&nbsp;<span class="text-muted small">*Required</span><br>
-    <%= form.text_field :name, :required => true, class: "form-control input col-6" %>
+    <%= form.text_field :name, :required => true, size: "45", class: "form-control input col-6" %>
   </div>
 
   <div class="field form-group input-group col-8">
     <%= form.label :description %>
-    <%= form.text_area :description, class: 'form-control input col-8' %>
+    <%= form.text_area :description, size: "45x4", class: 'form-control input col-8' %>
   </div>
 
   <div class="field form-group input-group col-8">
     <%= form.label :welcome %>
-    <%= form.text_area :welcome, class: 'form-control input col-8' %>
+    <%= form.text_area :welcome, size: "45x4", class: 'form-control input col-8' %>
   </div>
 
   <%= form.hidden_field :moderator, value: @room.moderator %>
@@ -49,6 +49,6 @@
 
   <div class="actions">
     <%= form.submit class: "btn btn-primary" %>
-    <%= form.button t('default.room.cancel'), :class => "btn btn-default", :label => "Cancel" %>
+    <%= form.button t('default.room.cancel'), class: "btn btn-default", name: "cancel" %>
   </div>
 <% end %>

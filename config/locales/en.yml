@@ -59,6 +59,7 @@ en:
       waitmoderator:  "Wait moderator"
       allmoderators:  "All moderators"
       update:         "Update"
+      updated:        "Updated"
       cancel:         "Cancel"
       tooltip:
         recording:    "The session may be recorded"

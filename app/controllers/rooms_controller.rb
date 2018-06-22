@@ -9,6 +9,7 @@ class RoomsController < ApplicationController
   include RoomsHelper
   before_action :set_room, only: %i[show edit update destroy meeting_join]
   before_action :set_launch_room, only: %i[launch]
+  before_action :check_for_cancel, :only => [:create, :update]
 
   # GET /rooms
   # GET /rooms.json
@@ -178,4 +179,11 @@ class RoomsController < ApplicationController
       end
       token
     end
+
+    def check_for_cancel
+      if params[:cancel]
+        redirect_to @room
+      end
+    end
+
 end
