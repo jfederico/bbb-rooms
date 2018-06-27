@@ -133,12 +133,12 @@ class RoomsController < ApplicationController
       @error = nil
       begin
         @room = Room.find(params[:id])
-        unless session.key?(@room.handler) || session['admin']
+        unless cookies[@room.handler] || session['admin']
           @room = nil
           @error = { key: t('error.room.forbiden.code'), message:  t('error.room.forbiden.message'), suggestion: t('error.room.forbiden.suggestion'), :status => :forbidden }
           return
         end
-        @launch_params = session[@room.handler]
+        @launch_params = cookies[@room.handler]
       rescue ActiveRecord::RecordNotFound => e
         @error = { key: t('error.room.notfound.code'), message:  t('error.room.notfound.message'), suggestion: t('error.room.notfound.suggestion'), :status => :not_found }
       end
@@ -162,7 +162,7 @@ class RoomsController < ApplicationController
       end
       @launch_params = sso["message"]
       @room = Room.find_by(handler: params[:handler]) || Room.new(@launch_params)
-      session[params[:handler]] = @launch_params
+      cookies[params[:handler]] = { :value => @launch_params.to_json, :expires => 30.minutes.from_now }
       session['admin'] = admin?
     end
 
