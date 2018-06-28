@@ -73,3 +73,5 @@ gem 'font-awesome-rails'
 gem "jquery-fileupload-rails"
 
 gem 'rest-client'
+gem 'webpacker'
+gem 'react-rails'
