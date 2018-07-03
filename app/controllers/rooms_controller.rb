@@ -138,7 +138,7 @@ class RoomsController < ApplicationController
           @error = { key: t('error.room.forbiden.code'), message:  t('error.room.forbiden.message'), suggestion: t('error.room.forbiden.suggestion'), :status => :forbidden }
           return
         end
-        @launch_params = cookies[@room.handler]
+        @launch_params = JSON.parse(cookies[@room.handler])
       rescue ActiveRecord::RecordNotFound => e
         @error = { key: t('error.room.notfound.code'), message:  t('error.room.notfound.message'), suggestion: t('error.room.notfound.suggestion'), :status => :not_found }
       end
