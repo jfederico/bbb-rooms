@@ -161,7 +161,7 @@ class RoomsController < ApplicationController
         return
       end
       @launch_params = sso["message"]
-      @room = Room.find_by(handler: params[:handler]) || Room.new(@launch_params)
+      @room = Room.find_by(handler: params[:handler]) || Room.create!(new_room_params)
       cookies[params[:handler]] = { :value => @launch_params.to_json, :expires => 30.minutes.from_now }
       session['admin'] = admin?
     end
@@ -172,7 +172,7 @@ class RoomsController < ApplicationController
     end
 
     # Never trust parameters from the scary internet, only allow the white list through.
-    def launch_params
+    def new_room_params
       moderator_token = role_token
       params.permit(:handler).merge({
         name: @launch_params['resource_link_title'],
