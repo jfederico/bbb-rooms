@@ -73,3 +73,9 @@ gem 'font-awesome-rails'
 gem "jquery-fileupload-rails"
 
 gem 'rest-client'
+
+gem 'omniauth'
+# omniauth-oauth2 version 1.3.1 is required to woraround a bug in doorkeeper gem
+# https://github.com/doorkeeper-gem/doorkeeper/issues/732
+# gem 'omniauth-oauth2', '1.3.1'
+gem 'omniauth-oauth2'

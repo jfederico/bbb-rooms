@@ -25,4 +25,8 @@ module ApplicationHelper
     (0...length).map { o[rand(o.length)] }.join
   end
 
+  def omniauth_strategy
+    ENV['OMNIAUTH_DEFAULT'] || 'doorkeeper'
+  end
+
 end

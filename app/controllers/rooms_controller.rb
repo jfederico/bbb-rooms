@@ -20,6 +20,12 @@ class RoomsController < ApplicationController
   # GET /rooms/1
   # GET /rooms/1.json
   def show
+    logger.info omniauth_path(omniauth_strategy)
+    #if !authenticated_user?
+    #  redirect_to "#{omniauth_path(omniauth_strategy)}/?origin=#{rooms_url}/#{params[:id]}"
+    #  #redirect_to omniauth_path(omniauth_strategy)
+    #  return
+    #end
     respond_to do |format|
       if @room
         format.html { render :show }
@@ -101,13 +107,13 @@ class RoomsController < ApplicationController
         format.json { render json: { error:  @error[:message] }, status: @error[:status] }
       end
     else
-      redirect_to join_meeting_url
+      redirect_to meeting_join_url
     end
   end
 
   private
 
-    def join_meeting_url
+    def meeting_join_url
       return unless @room
       bbb ||= BigBlueButton::BigBlueButtonApi.new(bigbluebutton_endpoint, bigbluebutton_secret, "0.8", true)
       unless bbb
@@ -123,7 +129,7 @@ class RoomsController < ApplicationController
       })
       role_token = (moderator? || @room.all_moderators) ? @room.moderator : @room.viewer
       role_identifier = moderator? ? t('default.bigbluebutton.moderator') : t('default.bigbluebutton.viewer')
-      bbb.join_meeting_url(@room.handler, username(role_identifier), role_token)
+      bbb.meeting_join_url(@room.handler, username(@launch_params, role_identifier), role_token)
     end
 
     # Use callbacks to share common setup or constraints between actions.
@@ -166,12 +172,10 @@ class RoomsController < ApplicationController
       session['admin'] = admin?
     end
 
-    # Never trust parameters from the scary internet, only allow the white list through.
     def room_params
       params.require(:room).permit(:name, :description, :welcome, :moderator, :viewer, :recording, :wait_moderator, :all_moderators)
     end
 
-    # Never trust parameters from the scary internet, only allow the white list through.
     def new_room_params
       moderator_token = role_token
       params.permit(:handler).merge({
