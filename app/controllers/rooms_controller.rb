@@ -1,4 +1,5 @@
 require 'bigbluebutton_api'
+require 'oauth2'
 require 'json'
 require 'rest-client'
 
@@ -7,6 +8,8 @@ class RoomsController < ApplicationController
   include BigBlueButtonHelper
   include LtiHelper
   include RoomsHelper
+  #skip_before_action :authenticate_user!, only: %i[:launch], :raise => false
+  before_action :authenticate_user!, :raise => false
   before_action :set_room, only: %i[show edit update destroy meeting_join]
   before_action :check_for_cancel, :only => [:create, :update]
   before_action :set_launch_room, only: %i[launch]
@@ -101,13 +104,29 @@ class RoomsController < ApplicationController
         format.json { render json: { error:  @error[:message] }, status: @error[:status] }
       end
     else
-      redirect_to join_meeting_url
+      redirect_to meeting_join_url
     end
   end
 
   private
 
-    def join_meeting_url
+    def authenticate_user!
+      logger.info ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"
+      logger.info params
+      if session[:user]
+        logger.info ">>>> AUTHENTICATED USER"
+        logger.info session[:user]
+        return
+      end
+      if params['action'] == 'launch'
+        logger.info ">>>> #{omniauth_path('doorkeeper')}"
+        redirect_to "#{omniauth_path('doorkeeper')}?origin=#{rooms_url()}"
+        return
+      end
+      redirect_to errors_path(401)
+    end
+
+    def meeting_join_url
       return unless @room
       bbb ||= BigBlueButton::BigBlueButtonApi.new(bigbluebutton_endpoint, bigbluebutton_secret, "0.8", true)
       unless bbb
@@ -123,7 +142,7 @@ class RoomsController < ApplicationController
       })
       role_token = (moderator? || @room.all_moderators) ? @room.moderator : @room.viewer
       role_identifier = moderator? ? t('default.bigbluebutton.moderator') : t('default.bigbluebutton.viewer')
-      bbb.join_meeting_url(@room.handler, username(role_identifier), role_token)
+      bbb.meeting_join_url(@room.handler, username(@launch_params, role_identifier), role_token)
     end
 
     # Use callbacks to share common setup or constraints between actions.
@@ -166,12 +185,10 @@ class RoomsController < ApplicationController
       session['admin'] = admin?
     end
 
-    # Never trust parameters from the scary internet, only allow the white list through.
     def room_params
       params.require(:room).permit(:name, :description, :welcome, :moderator, :viewer, :recording, :wait_moderator, :all_moderators)
     end
 
-    # Never trust parameters from the scary internet, only allow the white list through.
     def new_room_params
       moderator_token = role_token
       params.permit(:handler).merge({

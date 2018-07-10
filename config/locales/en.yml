@@ -66,8 +66,12 @@ en:
         waitmoderator: "Viewers are unable to join until a moderator joins"
         allmoderators: "All users will join as moderators"
 
-
   error:
+    http:
+      _401:
+        code:       "Unauthorized"
+        message:    "Unauthorized access"
+        suggestion: "If you are using this room through LTI try launching the app again by using the link or refreshing the browser"
     bigbluebutton:
       invalidrequest:
         code:       "BBBAPICallInvalid"
