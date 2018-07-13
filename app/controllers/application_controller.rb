@@ -3,7 +3,7 @@ class ApplicationController < ActionController::Base
 
   private
 
-    def omniauth_path(strategy)
+    def omniauth_path(strategy, origin = '')
       "/#{ENV['RELATIVE_URL_ROOT'] || ''}/auth/#{strategy}"
     end
 

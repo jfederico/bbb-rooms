@@ -8,6 +8,7 @@ Rails.application.routes.draw do
     scope 'rooms/:id/recordings' do
     end
     get '/launch', :to => 'rooms#launch', as: :launch
+    get '/lookup/:handler', :to => 'rooms#lookup', as: :lookup
     get '/sessions/create'
     get '/sessions/failure'
     get '/auth/:provider/callback', to: 'sessions#create', as: :omniauth_callback

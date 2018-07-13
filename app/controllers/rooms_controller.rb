@@ -9,10 +9,10 @@ class RoomsController < ApplicationController
   include LtiHelper
   include RoomsHelper
   #skip_before_action :authenticate_user!, only: %i[:launch], :raise => false
-  before_action :authenticate_user!, :raise => false
+  before_action :authenticate_user!, :raise => false, only: %i[launch]
+  before_action :set_launch_room, only: %i[launch]
   before_action :set_room, only: %i[show edit update destroy meeting_join]
   before_action :check_for_cancel, :only => [:create, :update]
-  before_action :set_launch_room, only: %i[launch]
 
   # GET /rooms
   # GET /rooms.json
@@ -23,6 +23,8 @@ class RoomsController < ApplicationController
   # GET /rooms/1
   # GET /rooms/1.json
   def show
+    logger.info ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> show"
+    logger.info params
     respond_to do |format|
       if @room
         format.html { render :show }
@@ -81,12 +83,14 @@ class RoomsController < ApplicationController
     end
   end
 
-  # GET /rooms/launch?name=&description=&handler=
-  # GET /rooms/launch.json?
+  # GET /launch?name=&description=&handler=
+  # GET /launch.json?
   def launch
+    logger.info ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> launch"
+    logger.info params
     respond_to do |format|
       if @room
-        format.html { redirect_to @room }
+        format.html { render :show }
         format.json { render :show, status: :created, location: @room }
       else
         format.html { render :error }
@@ -95,32 +99,40 @@ class RoomsController < ApplicationController
     end
   end
 
+  # GET /lookup/xxxxxxx.json?
+  # GET /lookup/xxxxxxx
+  def lookup
+    #@room = Room.find_by(handler: params[:handler]) || Room.create!(new_room_params)
+    #redirect_to @room
+  end
+
   # GET /rooms/:id/meeting/join
   # GET /rooms/:id/meeting/join.json
   def meeting_join
-    if @error
-      respond_to do |format|
-        format.html { render :error, status: @error[:status] }
-        format.json { render json: { error:  @error[:message] }, status: @error[:status] }
-      end
-    else
-      redirect_to meeting_join_url
-    end
   end
+
+  # GET /rooms/:id/meeting/end
+  # GET /rooms/:id/meeting/end.json
+  def meeting_end
+  end
+
 
   private
 
     def authenticate_user!
-      logger.info ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"
+      logger.info ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> authenticate_user"
       logger.info params
-      if session[:user]
+      if session[:uid]
         logger.info ">>>> AUTHENTICATED USER"
-        logger.info session[:user]
+        logger.info session[:uid]
         return
       end
       if params['action'] == 'launch'
-        logger.info ">>>> #{omniauth_path('doorkeeper')}"
-        redirect_to "#{omniauth_path('doorkeeper')}?origin=#{rooms_url()}"
+        cookies[:launch_params] = { :value => params.except(:app, :controller, :action).to_json, :expires => 30.minutes.from_now }
+        logger.info ">>>> #{omniauth_path(:doorkeeper)}"
+        #redirect_to "#{omniauth_path(:doorkeeper)}?token=#{params['token']}&origin=#{request.original_url}"
+        #redirect_to "#{omniauth_path(:doorkeeper)}?token=#{params['token']}&origin=#{lookup_url(params['handler'])}"
+        redirect_to "#{omniauth_path(:doorkeeper)}"
         return
       end
       redirect_to errors_path(401)
@@ -164,23 +176,27 @@ class RoomsController < ApplicationController
     end
 
     def set_launch_room
+      logger.info ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> set_launch_room"
       @launch_params = nil
       @room = nil
       @error = nil
       session['admin'] = false
       secret = ENV['LTI_TOOL_PROVIDER_SECRET'] || ''
-      url = untokenize(params[:token], secret, 'rooms')
+      url = untokenize(params[:sso], secret, 'rooms')
+      logger.info url
       unless url
         @error = { key: t('error.room.invalidsecret.code'), message:  t('error.room.invalidsecret.message'), suggestion: t('error.room.invalidsecret.suggestion'), :status => :forbidden }
         return
       end
       sso = JSON.parse(RestClient.get(url, headers={}))
+      logger.info sso
       unless sso["valid"]
         @error = { key: t('error.room.forbiden.code'), message:  t('error.room.forbiden.message'), suggestion: t('error.room.forbiden.suggestion'), :status => :forbidden }
         return
       end
       @launch_params = sso["message"]
-      @room = Room.find_by(handler: params[:handler]) || Room.create!(new_room_params)
+      @room = Room.find_by(handler: params[:handler]) || Room.create!(new_room_params(@launch_params['resource_link_title'], @launch_params['resource_link_description']))
+      logger.info @room
       cookies[params[:handler]] = { :value => @launch_params.to_json, :expires => 30.minutes.from_now }
       session['admin'] = admin?
     end
@@ -189,12 +205,12 @@ class RoomsController < ApplicationController
       params.require(:room).permit(:name, :description, :welcome, :moderator, :viewer, :recording, :wait_moderator, :all_moderators)
     end
 
-    def new_room_params
+    def new_room_params(name, description)
       moderator_token = role_token
       params.permit(:handler).merge({
-        name: @launch_params['resource_link_title'],
-        description: @launch_params['resource_link_description'],
-        welcome: "",
+        name: name,
+        description: description,
+        welcome: '',
         moderator: moderator_token,
         viewer: role_token(moderator_token),
         recording: false,

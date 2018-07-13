@@ -5,20 +5,29 @@ module OmniAuth
 
       option :client_options, {
         site: ENV['OMNIAUTH_DOORKEEPER_SITE'] || "http://localhost:3000",
-        authorize_url: "#{'/' + ENV['OMNIAUTH_DOORKEEPER_ROOT'] || ''}/oauth/authorize"
+        authorize_url: "#{ENV['OMNIAUTH_DOORKEEPER_ROOT'] ? '/' + ENV['OMNIAUTH_DOORKEEPER_ROOT'] : ''}/oauth/authorize",
+        token_url: "#{ENV['OMNIAUTH_DOORKEEPER_ROOT'] ? '/' + ENV['OMNIAUTH_DOORKEEPER_ROOT'] : ''}/oauth/token",
+        revoke_url: "#{ENV['OMNIAUTH_DOORKEEPER_ROOT'] ? '/' + ENV['OMNIAUTH_DOORKEEPER_ROOT'] : ''}/oauth/revoke",
       }
 
       uid do
-        raw_info["id"]
+        raw_info["uid"]
       end
 
       info do
-        {name: raw_info["name"]}
-        {origin: raw_info["origin"]}
+        {
+          full_name: raw_info["full_name"],
+          first_name: raw_info["first_name"],
+          last_name: raw_info["last_name"]
+        }
       end
 
       def raw_info
-        @raw_info ||= access_token.get('/api/v1/users.json').parsed
+        @raw_info ||= access_token.get("#{ENV['OMNIAUTH_DOORKEEPER_ROOT'] ? '/' + ENV['OMNIAUTH_DOORKEEPER_ROOT'] : ''}/api/v1/user.json").parsed
+      end
+
+      def authorize_params
+        super.merge(token: request.params["token"])
       end
     end
   end
