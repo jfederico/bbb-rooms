@@ -22,15 +22,12 @@ class SessionsController < ApplicationController
     logger.info "All good"
     session[:uid] = auth_hash.uid
     logger.info session[:uid]
-    logger.info request.env['omniauth.origin']
-    #redirect_to request.env['omniauth.origin']
-    #redirect_to lookup_path(session[:handler])
     logger.info cookies[:launch_params]
     logger.info JSON.parse(cookies[:launch_params]).to_query
     logger.info launch_url()
     query = JSON.parse(cookies[:launch_params]).to_query
     cookies.delete('launch_params')
-    redirect_to "#{launch_url()}?handler=#{query}"
+    redirect_to "#{launch_url()}?#{query}"
   end
 
   def failure

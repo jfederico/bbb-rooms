@@ -120,18 +120,12 @@ class RoomsController < ApplicationController
   private
 
     def authenticate_user!
-      logger.info ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> authenticate_user"
+      logger.info ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> authenticate_user!"
       logger.info params
-      if session[:uid]
-        logger.info ">>>> AUTHENTICATED USER"
-        logger.info session[:uid]
-        return
-      end
+      # Assume user authenticated if session[:uid] is set
+      return if session[:uid]
       if params['action'] == 'launch'
         cookies[:launch_params] = { :value => params.except(:app, :controller, :action).to_json, :expires => 30.minutes.from_now }
-        logger.info ">>>> #{omniauth_path(:doorkeeper)}"
-        #redirect_to "#{omniauth_path(:doorkeeper)}?token=#{params['token']}&origin=#{request.original_url}"
-        #redirect_to "#{omniauth_path(:doorkeeper)}?token=#{params['token']}&origin=#{lookup_url(params['handler'])}"
         redirect_to "#{omniauth_path(:doorkeeper)}"
         return
       end

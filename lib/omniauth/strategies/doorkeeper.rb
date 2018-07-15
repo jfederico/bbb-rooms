@@ -26,9 +26,6 @@ module OmniAuth
         @raw_info ||= access_token.get("#{ENV['OMNIAUTH_DOORKEEPER_ROOT'] ? '/' + ENV['OMNIAUTH_DOORKEEPER_ROOT'] : ''}/api/v1/user.json").parsed
       end
 
-      def authorize_params
-        super.merge(token: request.params["token"])
-      end
     end
   end
 end
