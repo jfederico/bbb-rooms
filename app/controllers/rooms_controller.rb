@@ -171,19 +171,22 @@ class RoomsController < ApplicationController
 
     def set_launch_room
       logger.info ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> set_launch_room"
+      logger.info params
       @launch_params = nil
       @room = nil
       @error = nil
       session['admin'] = false
-      secret = ENV['LTI_TOOL_PROVIDER_SECRET'] || ''
-      url = untokenize(params[:sso], secret, 'rooms')
-      logger.info url
-      unless url
-        @error = { key: t('error.room.invalidsecret.code'), message:  t('error.room.invalidsecret.message'), suggestion: t('error.room.invalidsecret.suggestion'), :status => :forbidden }
-        return
-      end
-      sso = JSON.parse(RestClient.get(url, headers={}))
+      #####################################################
+      url = "#{lti_tool_provider_api_v1_sso_url}/launches/#{params['token']}"
+      client_id = ENV['OMNIAUTH_DOORKEEPER_KEY']
+      client_secret = ENV['OMNIAUTH_DOORKEEPER_SECRET']
+      oauth2_url = "#{lti_tool_provider_url}/oauth/token"
+      response = RestClient.post(oauth2_url, {grant_type: 'client_credentials', client_id: client_id, client_secret: client_secret})
+      json_response = JSON.parse(response)
+      token = json_response["access_token"]
+      sso = JSON.parse(RestClient.get(url, {'Authorization' => "Bearer #{token}"}))
       logger.info sso
+      #####################################################
       unless sso["valid"]
         @error = { key: t('error.room.forbiden.code'), message:  t('error.room.forbiden.message'), suggestion: t('error.room.forbiden.suggestion'), :status => :forbidden }
         return
@@ -225,6 +228,14 @@ class RoomsController < ApplicationController
       if params[:cancel]
         redirect_to @room
       end
+    end
+
+    def lti_tool_provider_url
+      "#{ENV['OMNIAUTH_DOORKEEPER_SITE']}#{ENV['OMNIAUTH_DOORKEEPER_ROOT'] ? '/' + ENV['OMNIAUTH_DOORKEEPER_ROOT'] : ''}"
+    end
+
+    def lti_tool_provider_api_v1_sso_url
+      "#{lti_tool_provider_url}/api/v1/sso"
     end
 
 end
