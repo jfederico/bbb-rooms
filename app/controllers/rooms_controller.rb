@@ -1,14 +1,8 @@
-require 'bigbluebutton_api'
-require 'oauth2'
-require 'json'
-require 'rest-client'
-
 class RoomsController < ApplicationController
   include ApplicationHelper
   include BigBlueButtonHelper
   include LtiHelper
-  #skip_before_action :authenticate_user!, only: %i[:launch], :raise => false
-  before_action :authenticate_user!, :raise => false, only: %i[launch]
+  before_action :authenticate_user!, only: %i[launch], :raise => false
   before_action :set_launch_room, only: %i[launch]
   before_action :set_room, only: %i[show edit update destroy meeting_join meeting_end meeting_close]
   before_action :check_for_cancel, :only => [:create, :update]
@@ -22,8 +16,6 @@ class RoomsController < ApplicationController
   # GET /rooms/1
   # GET /rooms/1.json
   def show
-    logger.info ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> show"
-    logger.info params
     respond_to do |format|
       if @room
         format.html { render :show }
@@ -85,8 +77,6 @@ class RoomsController < ApplicationController
   # GET /launch?name=&description=&handler=
   # GET /launch.json?
   def launch
-    logger.info ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> launch"
-    logger.info params
     respond_to do |format|
       if @room
         format.html { render :show }
@@ -119,8 +109,6 @@ class RoomsController < ApplicationController
   private
 
     def authenticate_user!
-      logger.info ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> authenticate_user!"
-      logger.info params
       # Assume user authenticated if session[:uid] is set
       return if session[:uid]
       if params['action'] == 'launch'
@@ -135,7 +123,12 @@ class RoomsController < ApplicationController
       return unless @room && @launch_params
       bbb ||= BigBlueButton::BigBlueButtonApi.new(bigbluebutton_endpoint, bigbluebutton_secret, "0.8", true)
       unless bbb
-        @error = { key: t('error.bigbluebutton.invalidrequest.code'), message:  t('error.bigbluebutton.invalidrequest.message'), suggestion: t('error.bigbluebutton.invalidrequest.suggestion'), :status => :internal_server_error }
+        @error = {
+          key: t('error.bigbluebutton.invalidrequest.code'),
+          message:  t('error.bigbluebutton.invalidrequest.message'),
+          suggestion: t('error.bigbluebutton.invalidrequest.suggestion'),
+          status: :internal_server_error
+        }
         return
       end
       bbb.create_meeting(@room.name, @room.handler, {
@@ -152,10 +145,7 @@ class RoomsController < ApplicationController
 
     # Use callbacks to share common setup or constraints between actions.
     def set_room
-      logger.info ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> set_room"
-      @launch_params = nil
-      @room = nil
-      @error = nil
+      @launch_params = @room = @error = nil
       begin
         @room = Room.find(params[:id])
         unless cookies[@room.handler] || session['admin']
@@ -170,13 +160,9 @@ class RoomsController < ApplicationController
     end
 
     def set_launch_room
-      logger.info ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> set_launch_room"
-      logger.info params
-      @launch_params = nil
-      @room = nil
-      @error = nil
+      @launch_params = @room = @error = nil
       session['admin'] = false
-      #####################################################
+      # Validate if user has access to resource
       url = "#{lti_tool_provider_api_v1_sso_url}/launches/#{params['token']}"
       client_id = ENV['OMNIAUTH_DOORKEEPER_KEY']
       client_secret = ENV['OMNIAUTH_DOORKEEPER_SECRET']
@@ -185,15 +171,12 @@ class RoomsController < ApplicationController
       json_response = JSON.parse(response)
       token = json_response["access_token"]
       sso = JSON.parse(RestClient.get(url, {'Authorization' => "Bearer #{token}"}))
-      logger.info sso
-      #####################################################
       unless sso["valid"]
         @error = { key: t('error.room.forbiden.code'), message:  t('error.room.forbiden.message'), suggestion: t('error.room.forbiden.suggestion'), :status => :forbidden }
         return
       end
       @launch_params = sso["message"]
       @room = Room.find_by(handler: params[:handler]) || Room.create!(new_room_params(@launch_params['resource_link_title'], @launch_params['resource_link_description']))
-      logger.info @room
       cookies[params[:handler]] = { :value => @launch_params.to_json, :expires => 30.minutes.from_now }
       session['admin'] = admin?
     end

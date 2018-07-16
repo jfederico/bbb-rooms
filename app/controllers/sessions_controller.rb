@@ -5,34 +5,15 @@ class SessionsController < ApplicationController
   end
 
   def create
-    logger.info "****************************************************** A"
-    logger.info params
-    logger.info "Omniauth Create:"
     auth_hash = request.env['omniauth.auth']
-    if !auth_hash
-      logger.info "No auth_hash"
-      redirect_to omniauth_failure_url
-      return
-    end
-    if !auth_hash.uid
-      logger.info "No uid"
-      redirect_to omniauth_failure_url
-      return
-    end
-    logger.info "All good"
+    redirect_to omniauth_failure_url and return unless auth_hash && auth_hash.uid
     session[:uid] = auth_hash.uid
-    logger.info session[:uid]
-    logger.info cookies[:launch_params]
-    logger.info JSON.parse(cookies[:launch_params]).to_query
-    logger.info launch_url()
     query = JSON.parse(cookies[:launch_params]).to_query
     cookies.delete('launch_params')
     redirect_to "#{launch_url()}?#{query}"
   end
 
   def failure
-    logger.info "****************************************************** B"
-    logger.info "Omniauth Failure:"
   end
 
   protected
