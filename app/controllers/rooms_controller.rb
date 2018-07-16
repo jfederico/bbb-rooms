@@ -7,11 +7,10 @@ class RoomsController < ApplicationController
   include ApplicationHelper
   include BigBlueButtonHelper
   include LtiHelper
-  include RoomsHelper
   #skip_before_action :authenticate_user!, only: %i[:launch], :raise => false
   before_action :authenticate_user!, :raise => false, only: %i[launch]
   before_action :set_launch_room, only: %i[launch]
-  before_action :set_room, only: %i[show edit update destroy meeting_join]
+  before_action :set_room, only: %i[show edit update destroy meeting_join meeting_end meeting_close]
   before_action :check_for_cancel, :only => [:create, :update]
 
   # GET /rooms
@@ -99,16 +98,10 @@ class RoomsController < ApplicationController
     end
   end
 
-  # GET /lookup/xxxxxxx.json?
-  # GET /lookup/xxxxxxx
-  def lookup
-    #@room = Room.find_by(handler: params[:handler]) || Room.create!(new_room_params)
-    #redirect_to @room
-  end
-
   # GET /rooms/:id/meeting/join
   # GET /rooms/:id/meeting/join.json
   def meeting_join
+    redirect_to join_meeting_url
   end
 
   # GET /rooms/:id/meeting/end
@@ -116,6 +109,12 @@ class RoomsController < ApplicationController
   def meeting_end
   end
 
+  # GET /rooms/:id/meeting/close
+  def meeting_close
+    respond_to do |format|
+      format.html { render :autoclose }
+    end
+  end
 
   private
 
@@ -132,8 +131,8 @@ class RoomsController < ApplicationController
       redirect_to errors_path(401)
     end
 
-    def meeting_join_url
-      return unless @room
+    def join_meeting_url
+      return unless @room && @launch_params
       bbb ||= BigBlueButton::BigBlueButtonApi.new(bigbluebutton_endpoint, bigbluebutton_secret, "0.8", true)
       unless bbb
         @error = { key: t('error.bigbluebutton.invalidrequest.code'), message:  t('error.bigbluebutton.invalidrequest.message'), suggestion: t('error.bigbluebutton.invalidrequest.suggestion'), :status => :internal_server_error }
@@ -148,11 +147,12 @@ class RoomsController < ApplicationController
       })
       role_token = (moderator? || @room.all_moderators) ? @room.moderator : @room.viewer
       role_identifier = moderator? ? t('default.bigbluebutton.moderator') : t('default.bigbluebutton.viewer')
-      bbb.meeting_join_url(@room.handler, username(@launch_params, role_identifier), role_token)
+      bbb.join_meeting_url(@room.handler, username(@launch_params, role_identifier), role_token)
     end
 
     # Use callbacks to share common setup or constraints between actions.
     def set_room
+      logger.info ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> set_room"
       @launch_params = nil
       @room = nil
       @error = nil

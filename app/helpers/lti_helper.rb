@@ -1,7 +1,7 @@
 module LtiHelper
-  def username(default)
-    if @launch_params['lis_person_name_full']
-      return @launch_params['lis_person_name_full']
+  def username(launch_params, default)
+    if launch_params['lis_person_name_full']
+      return launch_params['lis_person_name_full']
     end
     if launch_params['lis_person_name_given'] || launch_params['lis_person_name_family']
       return "#{launch_params['lis_person_name_given']} #{launch_params['lis_person_name_family']}"
