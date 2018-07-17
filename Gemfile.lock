@@ -1,3 +1,9 @@
+GIT
+  remote: https://github.com/bigbluebutton/omniauth-bbbltibroker.git
+  revision: 0fcb7068744948d70a98b5c21544d016c49b9982
+  specs:
+    omniauth-bbbltibroker (0.1.0)
+
 GEM
   remote: https://rubygems.org/
   specs:
@@ -266,6 +272,7 @@ DEPENDENCIES
   json
   listen (>= 3.0.5, < 3.2)
   omniauth
+  omniauth-bbbltibroker!
   omniauth-oauth2
   puma (~> 3.11)
   rails (~> 5.2.0)

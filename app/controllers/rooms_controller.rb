@@ -113,8 +113,7 @@ class RoomsController < ApplicationController
       return if session[:uid]
       if params['action'] == 'launch'
         cookies[:launch_params] = { :value => params.except(:app, :controller, :action).to_json, :expires => 30.minutes.from_now }
-        redirect_to "#{omniauth_path(:doorkeeper)}"
-        return
+        redirect_to omniauth_authorize_path(:bbbltibroker) and return
       end
       redirect_to errors_path(401)
     end
@@ -163,14 +162,7 @@ class RoomsController < ApplicationController
       @launch_params = @room = @error = nil
       session['admin'] = false
       # Validate if user has access to resource
-      url = "#{lti_tool_provider_api_v1_sso_url}/launches/#{params['token']}"
-      client_id = ENV['OMNIAUTH_DOORKEEPER_KEY']
-      client_secret = ENV['OMNIAUTH_DOORKEEPER_SECRET']
-      oauth2_url = "#{lti_tool_provider_url}/oauth/token"
-      response = RestClient.post(oauth2_url, {grant_type: 'client_credentials', client_id: client_id, client_secret: client_secret})
-      json_response = JSON.parse(response)
-      token = json_response["access_token"]
-      sso = JSON.parse(RestClient.get(url, {'Authorization' => "Bearer #{token}"}))
+      sso = JSON.parse(RestClient.get("#{lti_broker_api_v1_sso_url}/launches/#{params['token']}", {'Authorization' => "Bearer #{omniauth_client_token}"}))
       unless sso["valid"]
         @error = { key: t('error.room.forbiden.code'), message:  t('error.room.forbiden.message'), suggestion: t('error.room.forbiden.suggestion'), :status => :forbidden }
         return
@@ -211,14 +203,6 @@ class RoomsController < ApplicationController
       if params[:cancel]
         redirect_to @room
       end
-    end
-
-    def lti_tool_provider_url
-      "#{ENV['OMNIAUTH_DOORKEEPER_SITE']}#{ENV['OMNIAUTH_DOORKEEPER_ROOT'] ? '/' + ENV['OMNIAUTH_DOORKEEPER_ROOT'] : ''}"
-    end
-
-    def lti_tool_provider_api_v1_sso_url
-      "#{lti_tool_provider_url}/api/v1/sso"
     end
 
 end

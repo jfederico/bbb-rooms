@@ -76,4 +76,5 @@ gem 'rest-client'
 
 gem 'omniauth'
 gem 'omniauth-oauth2'
-#gem 'omniauth-bbb-lti', path: '../omniauth-bbb-lti'
+#gem 'omniauth-bbbltibroker', path: '../omniauth-bbbltibroker'
+gem 'omniauth-bbbltibroker', git: 'https://github.com/bigbluebutton/omniauth-bbbltibroker.git'
