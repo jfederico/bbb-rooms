@@ -2,7 +2,7 @@ class RoomsController < ApplicationController
   include ApplicationHelper
   include BigBlueButtonHelper
   include LtiHelper
-  before_action :authenticate_user!, only: %i[launch], :raise => false
+  before_action :authenticate_user!, :raise => false
   before_action :set_launch_room, only: %i[launch]
   before_action :set_room, only: %i[show edit update destroy meeting_join meeting_end meeting_close]
   before_action :check_for_cancel, :only => [:create, :update]
