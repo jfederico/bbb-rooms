@@ -109,6 +109,7 @@ class RoomsController < ApplicationController
   private
 
     def authenticate_user!
+      return unless omniauth_provider?(:bbbltibroker)
       # Assume user authenticated if session[:uid] is set
       return if session[:uid]
       if params['action'] == 'launch'

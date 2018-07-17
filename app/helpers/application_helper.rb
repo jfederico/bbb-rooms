@@ -24,4 +24,10 @@ module ApplicationHelper
     JSON.parse(response)["access_token"]
   end
 
+  def omniauth_provider?(provider)
+    OmniAuth::strategies.each do |strategy|
+      return true if provider.downcase == strategy.to_s.demodulize.downcase
+    end
+  end
+
 end
