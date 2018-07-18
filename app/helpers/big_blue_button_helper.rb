@@ -18,4 +18,29 @@ module BigBlueButtonHelper
   def bigbluebutton_moderator_roles
     (ENV['BIGBLUEBUTTON_MODERATOR_ROLES'] || BIGBLUEBUTTON_MODERATOR_ROLES).split(",")
   end
+
+  def join_meeting_url
+    return unless @room and @user
+    bbb ||= BigBlueButton::BigBlueButtonApi.new(bigbluebutton_endpoint, bigbluebutton_secret, "0.8", true)
+    unless bbb
+      @error = {
+        key: t('error.bigbluebutton.invalidrequest.code'),
+        message:  t('error.bigbluebutton.invalidrequest.message'),
+        suggestion: t('error.bigbluebutton.invalidrequest.suggestion'),
+        status: :internal_server_error
+      }
+      return
+    end
+    bbb.create_meeting(@room.name, @room.handler, {
+      :moderatorPW => @room.moderator,
+      :attendeePW => @room.viewer,
+      :welcome => @room.welcome,
+      :record => @room.recording,
+      :logoutURL => autoclose_url,
+    })
+    role_token = (@user.moderator? || @room.all_moderators) ? @room.moderator : @room.viewer
+    role_identifier = @user.moderator? ? t('default.bigbluebutton.moderator') : t('default.bigbluebutton.viewer')
+    bbb.join_meeting_url(@room.handler, @user.username(role_identifier), role_token)
+  end
+
 end

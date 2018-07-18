@@ -1,7 +1,6 @@
 class RoomsController < ApplicationController
   include ApplicationHelper
   include BigBlueButtonHelper
-  include LtiHelper
   before_action :authenticate_user!, :raise => false
   before_action :set_launch_room, only: %i[launch]
   before_action :set_room, only: %i[show edit update destroy meeting_join meeting_end meeting_close]
@@ -113,54 +112,35 @@ class RoomsController < ApplicationController
       # Assume user authenticated if session[:uid] is set
       return if session[:uid]
       if params['action'] == 'launch'
-        cookies[:launch_params] = { :value => params.except(:app, :controller, :action).to_json, :expires => 30.minutes.from_now }
+        cookies['launch_params'] = { :value => params.except(:app, :controller, :action).to_json, :expires => 30.minutes.from_now }
         redirect_to omniauth_authorize_path(:bbbltibroker) and return
       end
       redirect_to errors_path(401)
     end
 
-    def join_meeting_url
-      return unless @room && @launch_params
-      bbb ||= BigBlueButton::BigBlueButtonApi.new(bigbluebutton_endpoint, bigbluebutton_secret, "0.8", true)
-      unless bbb
-        @error = {
-          key: t('error.bigbluebutton.invalidrequest.code'),
-          message:  t('error.bigbluebutton.invalidrequest.message'),
-          suggestion: t('error.bigbluebutton.invalidrequest.suggestion'),
-          status: :internal_server_error
-        }
-        return
-      end
-      bbb.create_meeting(@room.name, @room.handler, {
-        :moderatorPW => @room.moderator,
-        :attendeePW => @room.viewer,
-        :welcome => @room.welcome,
-        :record => @room.recording,
-        :logoutURL => autoclose_url,
-      })
-      role_token = (moderator? || @room.all_moderators) ? @room.moderator : @room.viewer
-      role_identifier = moderator? ? t('default.bigbluebutton.moderator') : t('default.bigbluebutton.viewer')
-      bbb.join_meeting_url(@room.handler, username(@launch_params, role_identifier), role_token)
-    end
-
     # Use callbacks to share common setup or constraints between actions.
     def set_room
-      @launch_params = @room = @error = nil
+      @room = @user = @error = nil
       begin
         @room = Room.find(params[:id])
+        if omniauth_provider?(:bbbltibroker)
+          @user = User.new({uid: 0, roles: 'Administrator', full_name: 'User'})
+          return
+        end
         unless cookies[@room.handler] || session['admin']
           @room = nil
           @error = { key: t('error.room.forbiden.code'), message:  t('error.room.forbiden.message'), suggestion: t('error.room.forbiden.suggestion'), :status => :forbidden }
           return
         end
-        @launch_params = JSON.parse(cookies[@room.handler])
+        launch_params = JSON.parse(cookies[@room.handler])
+        @user = User.new(user_params(launch_params))
       rescue ActiveRecord::RecordNotFound => e
         @error = { key: t('error.room.notfound.code'), message:  t('error.room.notfound.message'), suggestion: t('error.room.notfound.suggestion'), :status => :not_found }
       end
     end
 
     def set_launch_room
-      @launch_params = @room = @error = nil
+      @room = @user = @error = nil
       session['admin'] = false
       # Validate if user has access to resource
       sso = JSON.parse(RestClient.get("#{lti_broker_api_v1_sso_url}/launches/#{params['token']}", {'Authorization' => "Bearer #{omniauth_client_token}"}))
@@ -168,14 +148,26 @@ class RoomsController < ApplicationController
         @error = { key: t('error.room.forbiden.code'), message:  t('error.room.forbiden.message'), suggestion: t('error.room.forbiden.suggestion'), :status => :forbidden }
         return
       end
-      @launch_params = sso["message"]
-      @room = Room.find_by(handler: params[:handler]) || Room.create!(new_room_params(@launch_params['resource_link_title'], @launch_params['resource_link_description']))
-      cookies[params[:handler]] = { :value => @launch_params.to_json, :expires => 30.minutes.from_now }
+      launch_params = sso["message"]
+      @room = Room.find_by(handler: params[:handler]) || Room.create!(new_room_params(launch_params['resource_link_title'], launch_params['resource_link_description']))
+      @user = User.new(user_params(launch_params))
+      cookies[params[:handler]] = { :value => launch_params.to_json, :expires => 30.minutes.from_now }
       session['admin'] = admin?
     end
 
     def room_params
       params.require(:room).permit(:name, :description, :welcome, :moderator, :viewer, :recording, :wait_moderator, :all_moderators)
+    end
+
+    def user_params(launch_params)
+      {
+        uid: launch_params['user_id'],
+        roles: launch_params['roles'],
+        full_name: launch_params['lis_person_name_full'],
+        first_name: launch_params['lis_person_name_given'],
+        last_name: launch_params['lis_person_name_family'],
+        email: launch_params['lis_person_contact_email_primary'],
+      }
     end
 
     def new_room_params(name, description)

@@ -12,7 +12,7 @@ class SessionsController < ApplicationController
 
     # As authentication did not fail, initialize the session
     session[:uid] = auth_hash.uid
-    query = JSON.parse(cookies[:launch_params]).to_query
+    query = JSON.parse(cookies['launch_params']).to_query
     cookies.delete('launch_params')
     redirect_to "#{launch_url()}?#{query}"
   end
