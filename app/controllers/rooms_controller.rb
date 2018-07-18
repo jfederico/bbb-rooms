@@ -152,7 +152,7 @@ class RoomsController < ApplicationController
       @room = Room.find_by(handler: params[:handler]) || Room.create!(new_room_params(launch_params['resource_link_title'], launch_params['resource_link_description']))
       @user = User.new(user_params(launch_params))
       cookies[params[:handler]] = { :value => launch_params.to_json, :expires => 30.minutes.from_now }
-      session['admin'] = admin?
+      session['admin'] = @user.admin?
     end
 
     def room_params
