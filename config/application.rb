@@ -16,5 +16,8 @@ module BbbAppRooms
     # -- all .rb files in that directory are automatically loaded after loading
     # the framework and any gems in your application.
     config.action_dispatch.default_headers.delete "X-Frame-Options"
+
+    config.autoload_paths << Rails.root.join("lib")
+    config.eager_load_paths << Rails.root.join("lib")
   end
 end
