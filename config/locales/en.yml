@@ -38,10 +38,13 @@ en:
       handler:        "Handler"
       newroom:        "New Room"
       showall:        "Show all"
-      showroom:       "Show"
-      editroom:       "Edit"
-      destroyroom:    "Destroy"
-      confirm:        "Are you sure?"
+      showroom:
+        text:         "Show"
+      editroom:
+        text:         "Edit"
+      destroyroom:
+        text:         "Destroy"
+        confirmation: "Are you sure to destouy this room?"
     bigbluebutton:
       moderator:      "Moderator"
       viewer:         "Viewer"
@@ -49,6 +52,10 @@ en:
       created:        "Room was successfully created."
       edit:           "Edit"
       editing:        "Editing Room"
+      show:           "Show"
+      showing:        "Showing Room"
+      destroy:        "Destroy"
+      destroyed:      "Room was successfully destroyed"
       join:           "Join"
       name:           "Name"
       description:    "Description"
@@ -65,6 +72,9 @@ en:
         recording:    "The session may be recorded"
         waitmoderator: "Viewers are unable to join until a moderator joins"
         allmoderators: "All users will join as moderators"
+    meeting:
+      close:           "Close tab/window"
+      close_manually:  "This tab/window must be closed manually"
 
   error:
     http:

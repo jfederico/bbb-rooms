@@ -30,9 +30,17 @@
         <td><%= room.recording %></td>
         <td><%= room.wait_moderator %></td>
         <td><%= room.all_moderators %></td>
-        <td><%= link_to t('default.admin.showroom'), room, class: "btn btn-xs btn-default" %></td>
-        <td><%= link_to t('default.admin.editroom'), edit_room_path(room), class: "btn btn-xs btn-default" %></td>
-        <td><%= link_to t('default.admin.destroyroom'), room, method: :delete, class: "btn btn-xs btn-danger", data: { confirm: t('default.admin.confirm') } %></td>
+        <td>
+          <%= link_to t('default.admin.showroom.text'), room,
+                class: "btn btn-xs btn-default" %></td>
+        <td>
+          <%= link_to t('default.admin.editroom.text'), edit_room_path(room),
+                class: "btn btn-xs btn-default" %></td>
+        <td>
+          <%= link_to t('default.admin.destroyroom.text'), room,
+                class: "btn btn-xs btn-danger",
+                data: { confirm: t('default.admin.destroyroom.confirmation') },
+                method: :delete %></td>
       </tr>
     <% end %>
   </tbody>
