@@ -21,7 +21,7 @@ module BigBlueButtonHelper
 
   def join_meeting_url
     return unless @room and @user
-    bbb ||= BigBlueButton::BigBlueButtonApi.new(bigbluebutton_endpoint, bigbluebutton_secret, "0.8", true)
+    bbb ||= BigBlueButton::BigBlueButtonApi.new(bigbluebutton_endpoint, bigbluebutton_secret, "0.8", false)
     unless bbb
       @error = {
         key: t('error.bigbluebutton.invalidrequest.code'),
@@ -38,9 +38,8 @@ module BigBlueButtonHelper
       :record => @room.recording,
       :logoutURL => autoclose_url,
     })
-    role_token = (@user.moderator? || @room.all_moderators) ? @room.moderator : @room.viewer
-    role_identifier = @user.moderator? ? t('default.bigbluebutton.moderator') : t('default.bigbluebutton.viewer')
-    bbb.join_meeting_url(@room.handler, @user.username(role_identifier), role_token)
+    role = (@user.moderator?(bigbluebutton_moderator_roles) || @room.all_moderators) ? 'moderator' : 'viewer'
+    bbb.join_meeting_url(@room.handler, @user.username(t("default.bigbluebutton.#{role}")), @room.attributes[role])
   end
 
 end

@@ -78,7 +78,7 @@ en:
         message:    "BBB API call invalid"
         suggestion: "Make sure the BigBlueButton server used is available and accesible from the server where the LTI application is installed"
     room:
-      forbiden:
+      forbidden:
         code:       "AccessForbidden"
         message:    "The session has expired"
         suggestion: "If you are using this room through LTI try launching the app again by using the link or refreshing the browser"

@@ -26,7 +26,7 @@ module ApplicationHelper
 
   def omniauth_provider?(provider)
     OmniAuth::strategies.each do |strategy|
-      return true if provider.downcase == strategy.to_s.demodulize.downcase
+      return true if provider.to_s.downcase == strategy.to_s.demodulize.downcase
     end
     false
   end

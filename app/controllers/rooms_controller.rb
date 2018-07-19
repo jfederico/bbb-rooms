@@ -107,6 +107,11 @@ class RoomsController < ApplicationController
 
   private
 
+    def set_error(error, status)
+      @room = @user = nil
+      @error = { key: t("error.room.#{error}.code"), message:  t("error.room.#{error}.message"), suggestion: t("error.room.#{error}.suggestion"), :status => status }
+    end
+
     def authenticate_user!
       return unless omniauth_provider?(:bbbltibroker)
       # Assume user authenticated if session[:uid] is set
@@ -120,39 +125,32 @@ class RoomsController < ApplicationController
 
     # Use callbacks to share common setup or constraints between actions.
     def set_room
-      @room = @user = @error = nil
-      begin
-        @room = Room.find(params[:id])
-        if omniauth_provider?(:bbbltibroker)
-          @user = User.new({uid: 0, roles: 'Administrator', full_name: 'User'})
-          return
-        end
-        unless cookies[@room.handler] || session['admin']
-          @room = nil
-          @error = { key: t('error.room.forbiden.code'), message:  t('error.room.forbiden.message'), suggestion: t('error.room.forbiden.suggestion'), :status => :forbidden }
-          return
-        end
-        launch_params = JSON.parse(cookies[@room.handler])
-        @user = User.new(user_params(launch_params))
-      rescue ActiveRecord::RecordNotFound => e
-        @error = { key: t('error.room.notfound.code'), message:  t('error.room.notfound.message'), suggestion: t('error.room.notfound.suggestion'), :status => :not_found }
+      @error = nil
+      @room = Room.find_by(id: params[:id])
+      # Exit with error if room was not found
+      set_error('notfound', :not_found) and return unless @room
+      # Exit with error by re-setting the room to nil if the cookie for the room.handler is not set
+      set_error('forbidden', :forbidden) and return unless cookies[@room.handler]
+      # Exit by setting the user as Administrator if bbbltibroker is not enabled
+      unless omniauth_provider?(:bbbltibroker)
+        @user = User.new({uid: 0, roles: 'Administrator', full_name: 'User'})
+        return
       end
+      # Continue through happy path
+      launch_params = JSON.parse(cookies[@room.handler])
+      @user = User.new(user_params(launch_params))
     end
 
     def set_launch_room
-      @room = @user = @error = nil
-      session['admin'] = false
-      # Validate if user has access to resource
+      @error = nil
       sso = JSON.parse(RestClient.get("#{lti_broker_api_v1_sso_url}/launches/#{params['token']}", {'Authorization' => "Bearer #{omniauth_client_token}"}))
-      unless sso["valid"]
-        @error = { key: t('error.room.forbiden.code'), message:  t('error.room.forbiden.message'), suggestion: t('error.room.forbiden.suggestion'), :status => :forbidden }
-        return
-      end
+      # Exit with error if sso is not valid
+      set_error('forbidden', :forbidden) and return unless sso["valid"]
+      # Continue through happy path
       launch_params = sso["message"]
       @room = Room.find_by(handler: params[:handler]) || Room.create!(new_room_params(launch_params['resource_link_title'], launch_params['resource_link_description']))
       @user = User.new(user_params(launch_params))
       cookies[params[:handler]] = { :value => launch_params.to_json, :expires => 30.minutes.from_now }
-      session['admin'] = @user.admin?
     end
 
     def room_params
