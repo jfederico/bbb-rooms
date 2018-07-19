@@ -129,13 +129,13 @@ class RoomsController < ApplicationController
       @room = Room.find_by(id: params[:id])
       # Exit with error if room was not found
       set_error('notfound', :not_found) and return unless @room
-      # Exit with error by re-setting the room to nil if the cookie for the room.handler is not set
-      set_error('forbidden', :forbidden) and return unless cookies[@room.handler]
       # Exit by setting the user as Administrator if bbbltibroker is not enabled
       unless omniauth_provider?(:bbbltibroker)
         @user = User.new({uid: 0, roles: 'Administrator', full_name: 'User'})
         return
       end
+      # Exit with error by re-setting the room to nil if the cookie for the room.handler is not set
+      set_error('forbidden', :forbidden) and return unless cookies[@room.handler]
       # Continue through happy path
       launch_params = JSON.parse(cookies[@room.handler])
       @user = User.new(user_params(launch_params))
@@ -169,25 +169,14 @@ class RoomsController < ApplicationController
     end
 
     def new_room_params(name, description)
-      moderator_token = role_token
       params.permit(:handler).merge({
         name: name,
         description: description,
         welcome: '',
-        moderator: moderator_token,
-        viewer: role_token(moderator_token),
         recording: false,
         wait_moderator: false,
         all_moderators: false
       })
-    end
-
-    def role_token(base = nil)
-      token = random_password(8)
-      while token == base
-        token = random_password(8)
-      end
-      token
     end
 
     def check_for_cancel

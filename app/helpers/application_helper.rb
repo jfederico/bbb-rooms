@@ -1,10 +1,5 @@
 module ApplicationHelper
 
-  def random_password(length)
-    o = [('a'..'z'), ('A'..'Z')].map { |i| i.to_a }.flatten
-    (0...length).map { o[rand(o.length)] }.join
-  end
-
   def omniauth_authorize_path(provider)
     "#{ENV['RELATIVE_URL_ROOT'] ? '/' + ENV['RELATIVE_URL_ROOT'] : ''}/auth/#{provider.to_s}"
   end
@@ -24,9 +19,10 @@ module ApplicationHelper
     JSON.parse(response)["access_token"]
   end
 
-  def omniauth_provider?(provider)
+  def omniauth_provider?(code)
+    provider = code.to_s
     OmniAuth::strategies.each do |strategy|
-      return true if provider.to_s.downcase == strategy.to_s.demodulize.downcase
+      return true if provider.downcase == strategy.to_s.demodulize.downcase and ENV["OMNIAUTH_#{provider.upcase}_KEY"] and ENV["OMNIAUTH_#{provider.upcase}_SECRET"]
     end
     false
   end
